@@ -43,6 +43,7 @@ class SbtProcessManager(project: Project) extends AbstractProjectComponent(proje
     // TODO make sure jvm also gets proxy settings
     javaParameters.getVMParametersList.addAll(sbtSettings.vmOptions.asJava)
 
+    // TODO try the ptycommandline under windows
     val commandLine: GeneralCommandLine = JdkUtil.setupJVMCommandLine(sbtSettings.vmExecutable.getAbsolutePath, javaParameters, false)
     new ColoredProcessHandler(commandLine)
   }

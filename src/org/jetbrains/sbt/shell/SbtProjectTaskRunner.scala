@@ -12,6 +12,8 @@ import com.intellij.openapi.externalSystem.model.{DataNode, ProjectKeys}
 import com.intellij.openapi.externalSystem.service.project.manage.ProjectDataManager
 import com.intellij.openapi.externalSystem.util.{ExternalSystemUtil, ExternalSystemApiUtil => ES}
 import com.intellij.openapi.module.ModuleType
+import com.intellij.openapi.progress.Task._
+import com.intellij.openapi.progress.{PerformInBackgroundOption, ProgressIndicator, ProgressManager, Task}
 import com.intellij.openapi.project.Project
 import com.intellij.task._
 import com.intellij.util.BooleanFunction
@@ -22,7 +24,9 @@ import org.jetbrains.sbt.project.module.SbtModuleType
 import org.jetbrains.sbt.settings.SbtSystemSettings
 
 import scala.collection.JavaConverters._
+import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success}
 
 /**
@@ -98,17 +102,38 @@ class SbtProjectTaskRunner extends ProjectTaskRunner {
         // TODO also run task for non-default scopes? test, it, etc
     }.flatten.mkString("; ", "; ", "")
 
-    // TODO consider running module build tasks separately
-    // may require collecting results individually and aggregating
-    // and shell communication should do proper queueing
-    shell.command(command)
-      .onComplete {
-      case Success(taskResult) =>
-        // TODO progress monitoring
-        callbackOpt.foreach(_.finished(taskResult))
-      case Failure(x) =>
-        // TODO some kind of feedback / rethrow
+    // run this as a task (which blocks a thread) because it seems non-trivial to just update indicators asynchronously?
+    val task = new CommandTask(project) {
+      override def run(indicator: ProgressIndicator): Unit = {
+        indicator.start()
+        indicator.setIndeterminate(true)
+        indicator.setFraction(0)
+        indicator.setText("queued sbt build")
+
+        // TODO consider running module build tasks separately
+        // may require collecting results individually and aggregating
+        // and shell communication should do proper queueing
+        val commandFuture = shell.commandWithIndicator(command, indicator)
+          .andThen {
+            case Success(taskResult) =>
+              // TODO progress monitoring
+              callbackOpt.foreach(_.finished(taskResult))
+              indicator.setFraction(1)
+              indicator.setText("sbt build completed")
+              indicator.stop()
+            case Failure(x) =>
+              indicator.setText("sbt build failed")
+              indicator.cancel()
+            // TODO some kind of feedback / rethrow
+          }
+
+        // block thread to make indicator available :(
+        Await.ready(commandFuture, Duration.Inf)
+      }
+
     }
+
+    ProgressManager.getInstance().run(task)
   }
 
   @Nullable
@@ -125,4 +150,7 @@ class SbtProjectTaskRunner extends ProjectTaskRunner {
       taskSettings, executorId
     )
   }
+
 }
+
+abstract class CommandTask(project: Project) extends Task.Backgroundable(project, "sbt build", false, PerformInBackgroundOption.DEAF)
