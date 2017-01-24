@@ -1,8 +1,6 @@
 package org.jetbrains.sbt.resolvers
 
-import java.io.File
-
-import org.jetbrains.plugins.scala.base.ScalaFixtureTestCase
+import org.jetbrains.plugins.scala.base.ScalaLightCodeInsightFixtureTestAdapter
 import org.jetbrains.sbt.resolvers.indexes.ResolverIndex
 import org.junit.Assert._
 
@@ -10,12 +8,11 @@ import org.junit.Assert._
  * @author Nikolay Obedin
  * @since 6/9/15.
  */
-abstract class IndexingTestCase extends ScalaFixtureTestCase {
-
-
+abstract class IndexingTestCase extends ScalaLightCodeInsightFixtureTestAdapter {
+  
   override def setUp(): Unit = {
     super.setUp()
-    System.setProperty("ivy.test.indexes.dir", myFixture.getTempDirPath)
+    System.setProperty("ivy.test.indexes.dir", getFixture.getTempDirPath)
   }
 
   override def tearDown(): Unit = {

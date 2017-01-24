@@ -1,7 +1,7 @@
 package org.jetbrains.plugins.scala.failed.typeInference
 
 import org.jetbrains.plugins.scala.PerfCycleTests
-import org.jetbrains.plugins.scala.base.ScalaFixtureTestCase
+import org.jetbrains.plugins.scala.base.ScalaLightCodeInsightFixtureTestAdapter
 import org.jetbrains.plugins.scala.lang.psi.api.ScalaRecursiveElementVisitor
 import org.jetbrains.plugins.scala.lang.psi.api.expr.ScReferenceExpression
 import org.junit.experimental.categories.Category
@@ -11,10 +11,10 @@ import org.junit.experimental.categories.Category
   * @since 22/03/16
   */
 @Category(Array(classOf[PerfCycleTests]))
-class PackagesTest extends ScalaFixtureTestCase {
+class PackagesTest extends ScalaLightCodeInsightFixtureTestAdapter {
   def testSCL8850(): Unit = {
-    myFixture.addFileToProject("tuff/scl8850/temp.txt", "Something")
-    myFixture.addFileToProject("scl8850/A.scala",
+    getFixture.addFileToProject("tuff/scl8850/temp.txt", "Something")
+    getFixture.addFileToProject("scl8850/A.scala",
       """
         |package scl8850
         |
@@ -22,7 +22,7 @@ class PackagesTest extends ScalaFixtureTestCase {
         |  val a = 1
         |}
       """.stripMargin)
-    val fileToCheck = myFixture.addFileToProject("tuff/MyTest.scala",
+    val fileToCheck = getFixture.addFileToProject("tuff/MyTest.scala",
       """
         |package tuff
         |

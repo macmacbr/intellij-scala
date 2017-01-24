@@ -1,13 +1,13 @@
 package org.jetbrains.plugins.scala.lang.typeInference.generated
 
-import org.jetbrains.plugins.scala.base.ScalaFixtureTestCase
+import org.jetbrains.plugins.scala.base.ScalaLightCodeInsightFixtureTestAdapter
 import org.jetbrains.plugins.scala.lang.psi.api.ScalaFile
-import org.jetbrains.plugins.scala.lang.typeInference.{TypeInferenceDoTest, TypeInferenceTestBase}
+import org.jetbrains.plugins.scala.lang.typeInference.TypeInferenceDoTest
 
 /**
   * Created by Svyatoslav Ilinskiy on 01.07.16.
   */
-class PackageTypeInferenceTest extends ScalaFixtureTestCase with TypeInferenceDoTest {
+class PackageTypeInferenceTest extends ScalaLightCodeInsightFixtureTestAdapter with TypeInferenceDoTest {
   def testImplicitPackageObjects(): Unit = {
     val foo =
       """
@@ -47,11 +47,10 @@ class PackageTypeInferenceTest extends ScalaFixtureTestCase with TypeInferenceDo
   }
 
   protected def addFile(text: String, name: String) = {
-    myFixture.addFileToProject(name, text)
+    getFixture.addFileToProject(name, text)
   }
 
   override def configureFromFileText(fileName: String, fileText: Option[String]): ScalaFile = {
-    val file: ScalaFile = myFixture.configureByText(fileName, fileText.get.trim.replace("\r", "")).asInstanceOf[ScalaFile]
-    file
+    getFixture.configureByText(fileName, fileText.get.trim.replace("\r", "")).asInstanceOf[ScalaFile]
   }
 }

@@ -2,7 +2,7 @@ package org.jetbrains.plugins.scala
 package lang
 package typeInference
 
-import org.jetbrains.plugins.scala.base.ScalaFixtureTestCase
+import org.jetbrains.plugins.scala.base.ScalaLightCodeInsightFixtureTestAdapter
 import org.jetbrains.plugins.scala.lang.psi.api.ScalaRecursiveElementVisitor
 import org.jetbrains.plugins.scala.lang.psi.api.expr.ScReferenceExpression
 
@@ -10,9 +10,9 @@ import org.jetbrains.plugins.scala.lang.psi.api.expr.ScReferenceExpression
   * @author Alefas
   * @since 22/03/16
   */
-class PackagesTest extends ScalaFixtureTestCase {
+class PackagesTest extends ScalaLightCodeInsightFixtureTestAdapter {
   def testSCL9540(): Unit = {
-    myFixture.addFileToProject("com/example/packaje/package.scala",
+    getFixture.addFileToProject("com/example/packaje/package.scala",
       """
         |package com.example
         |
@@ -31,7 +31,7 @@ class PackagesTest extends ScalaFixtureTestCase {
         |  case class IntWithString(int: Int, string: String)
         |}
       """.stripMargin)
-    val fileToCheck = myFixture.addFileToProject("com/example/other/packaje/UseCaseClassFromPackageObject.scala",
+    val fileToCheck = getFixture.addFileToProject("com/example/other/packaje/UseCaseClassFromPackageObject.scala",
       """
         |package com.example.other.packaje
         |

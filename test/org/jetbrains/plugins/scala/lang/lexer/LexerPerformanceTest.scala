@@ -1,14 +1,14 @@
 package org.jetbrains.plugins.scala.lang.lexer
 
 import com.intellij.testFramework.PlatformTestUtil
-import org.jetbrains.plugins.scala.base.ScalaFixtureTestCase
+import org.jetbrains.plugins.scala.base.ScalaLightCodeInsightFixtureTestAdapter
 
 /**
  * @author Alefas
  * @since 05.04.12
  */
 
-class LexerPerformanceTest extends ScalaFixtureTestCase {
+class LexerPerformanceTest extends ScalaLightCodeInsightFixtureTestAdapter {
   def testPerformance() {
     val text = """
 package examples
