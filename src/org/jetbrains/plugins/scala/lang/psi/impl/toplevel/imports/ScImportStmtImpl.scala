@@ -94,12 +94,12 @@ class ScImportStmtImpl private (stub: StubElement[ScImportStmt], nodeType: IElem
           case p:ResolveProcessor=>
             ref match {
               // do not process methodrefs when importing a type from a type
-              case ref: ResolvableStableCodeReferenceElement
+              case ref: ScStableCodeReferenceElement
                 if p.kinds.contains(ResolveTargets.CLASS) &&
                   ref.getKinds(incomplete = false).contains(ResolveTargets.CLASS) &&
                   ref.getKinds(incomplete = false).contains(ResolveTargets.METHOD) =>
                 ref.resolveTypesOnly(false)
-              case ref: ResolvableStableCodeReferenceElement if p.kinds.contains(ResolveTargets.METHOD) =>
+              case ref: ScStableCodeReferenceElement if p.kinds.contains(ResolveTargets.METHOD) =>
                 ref.resolveMethodsOnly(false)
               case _ => ref.multiResolve(false)
             }
@@ -221,29 +221,35 @@ class ScImportStmtImpl private (stub: StubElement[ScImportStmt], nodeType: IElem
               } else if (!processor.execute(elem, newState)) return false
             case Some(set) =>
               val shadowed: mutable.HashSet[(ScImportSelector, PsiElement)] = mutable.HashSet.empty
-              set.selectors.foreach { selector =>
+              val selectors = set.selectors.iterator //for reducing stacktrace
+              while (selectors.hasNext) {
+                val selector = selectors.next()
                 ProgressManager.checkCanceled()
-                for (element <- selector.reference;
-                     result <- element.multiResolve(false)) {
-                  if (selector.isAliasedImport && selector.importedName != selector.reference.map(_.refName)) {
-                      //Resolve the name imported by selector
-                      //Collect shadowed elements
-                      shadowed += ((selector, result.getElement))
-                      var newState: ResolveState = state
-                    selector.importedName.map {
-                      ScalaNamesUtil.clean
-                    }.foreach { name =>
-                      newState = state.put(ResolverEnv.nameKey, name)
-                    }
-                      newState = newState.put(ImportUsed.key, Set(importsUsed.toSeq: _*) + ImportSelectorUsed(selector)).
-                        put(ScSubstitutor.key, subst)
-                      calculateRefType(checkResolve(result)).foreach {tp =>
-                        newState = newState.put(BaseProcessor.FROM_TYPE_KEY, tp)
+                selector.reference match {
+                  case Some(reference) =>
+                    val isImportAlias = selector.isAliasedImport && !selector.importedName.contains(reference.refName)
+                    if (isImportAlias) {
+                      for (result <- reference.multiResolve(false)) {
+                        //Resolve the name imported by selector
+                        //Collect shadowed elements
+                        shadowed += ((selector, result.getElement))
+                        var newState: ResolveState = state
+                        selector.importedName.map {
+                          ScalaNamesUtil.clean
+                        }.foreach { name =>
+                          newState = state.put(ResolverEnv.nameKey, name)
+                        }
+                        newState = newState.put(ImportUsed.key, Set(importsUsed.toSeq: _*) + ImportSelectorUsed(selector)).
+                          put(ScSubstitutor.key, subst)
+                        calculateRefType(checkResolve(result)).foreach {tp =>
+                          newState = newState.put(BaseProcessor.FROM_TYPE_KEY, tp)
+                        }
+                        if (!processor.execute(result.getElement, newState)) {
+                          return false
+                        }
                       }
-                      if (!processor.execute(result.getElement, newState)) {
-                        return false
-                      }
                     }
+                  case _ =>
                 }
               }
 
